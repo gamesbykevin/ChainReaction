@@ -63,7 +63,7 @@ public final class ScreenManager implements Screen, Disposable
      */
     public static final int BUTTON_Y_INCREMENT = MenuScreen.BUTTON_HEIGHT + (MenuScreen.BUTTON_HEIGHT / 2);
     
-    /**
+    /** 
      * The y-coordinate spacing between each button
      */
     public static final int BUTTON_X_INCREMENT = MenuScreen.BUTTON_WIDTH + (MenuScreen.BUTTON_WIDTH / 2);
