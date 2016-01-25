@@ -7,7 +7,9 @@ import android.graphics.Typeface;
 import com.gamesbykevin.androidframework.resources.Audio;
 
 import com.gamesbykevin.androidframework.resources.Disposable;
+import com.gamesbykevin.androidframework.resources.Images;
 import com.gamesbykevin.androidframework.screen.Screen;
+import com.gamesbykevin.chainreaction.assets.Assets;
 import com.gamesbykevin.chainreaction.panel.GamePanel;
 
 import java.util.HashMap;
@@ -41,12 +43,12 @@ public final class ScreenManager implements Screen, Disposable
     /**
      * The x-coordinate where we want the logo to be displayed
      */
-    public static final int LOGO_X = 20;
+    public static final int LOGO_X = 2;
     
     /**
      * The y-coordinate where we want the logo to be displayed
      */
-    public static final int LOGO_Y = 20;
+    public static final int LOGO_Y = 25;
     
     /**
      * The x-coordinate where we want to start putting the buttons
@@ -56,17 +58,17 @@ public final class ScreenManager implements Screen, Disposable
     /**
      * The y-coordinate where we want to start putting the buttons
      */
-    public static final int BUTTON_Y = 125;
+    public static final int BUTTON_Y = 145;
     
     /**
      * The y-coordinate spacing between each button
      */
-    public static final int BUTTON_Y_INCREMENT = MenuScreen.BUTTON_HEIGHT + (MenuScreen.BUTTON_HEIGHT / 2);
+    public static final int BUTTON_Y_INCREMENT = MenuScreen.BUTTON_HEIGHT + (int)(MenuScreen.BUTTON_HEIGHT * .5);
     
     /**
      * The y-coordinate spacing between each button
      */
-    public static final int BUTTON_X_INCREMENT = MenuScreen.BUTTON_WIDTH + (MenuScreen.BUTTON_WIDTH / 2);
+    public static final int BUTTON_X_INCREMENT = MenuScreen.BUTTON_WIDTH + (int)(MenuScreen.BUTTON_WIDTH * .5);
     
     /**
      * The alpha visibility to apply when darkening the background
@@ -230,6 +232,9 @@ public final class ScreenManager implements Screen, Disposable
         {
             //fill background
             canvas.drawColor(Color.BLACK);
+            
+            //draw the background
+            canvas.drawBitmap(Images.getImage(Assets.ImageMenuKey.Background), 0, 0, null);
             
             //render the game
             getScreenGame().render(canvas);

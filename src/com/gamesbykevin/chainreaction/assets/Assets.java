@@ -71,17 +71,15 @@ public class Assets
      */
     public enum ImageMenuKey
     {
+    	Background,
     	Button,
     	Cancel, 
     	Confirm,
     	Facebook,
     	Instructions,
     	Twitter,
-    	Logo
-    	/*
-    	Background,
+    	Logo,
     	Splash,
-    	*/
     }
     
     /**
@@ -90,6 +88,7 @@ public class Assets
      */
     public enum ImageGameKey
     {
+    	Balls
     	/*
     	Asteroids,
     	AudioOff,

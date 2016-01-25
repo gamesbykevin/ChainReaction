@@ -122,12 +122,12 @@ public class OptionsScreen implements Screen, Disposable
     private void addIcons()
     {
         Button tmp = new Button(Images.getImage(Assets.ImageMenuKey.Instructions));
-        tmp.setX(30);
+        tmp.setX(60);
         tmp.setY(GamePanel.HEIGHT - (MenuScreen.ICON_DIMENSION * 1.25));
         this.buttons.put(Key.Instructions, tmp);
         
         tmp = new Button(Images.getImage(Assets.ImageMenuKey.Facebook));
-        tmp.setX(180);
+        tmp.setX(195);
         tmp.setY(GamePanel.HEIGHT - (MenuScreen.ICON_DIMENSION * 1.25));
         this.buttons.put(Key.Facebook, tmp);
         

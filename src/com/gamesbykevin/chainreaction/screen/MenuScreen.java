@@ -33,7 +33,7 @@ public class MenuScreen implements Screen, Disposable
     /**
      * Button text to display to exit the game
      */
-    public static final String BUTTON_TEXT_EXIT_GAME = "Exit Game";
+    public static final String BUTTON_TEXT_EXIT_GAME = "Exit";
     
     /**
      * Button text to display to rate the game
@@ -43,7 +43,7 @@ public class MenuScreen implements Screen, Disposable
     /**
      * Button text to display to start a new game
      */
-    public static final String BUTTON_TEXT_START_GAME = "Start Game";
+    public static final String BUTTON_TEXT_START_GAME = "Start";
     
     /**
      * Button text to display for the options
@@ -76,7 +76,7 @@ public class MenuScreen implements Screen, Disposable
     /**
      * The size of our icon buttons
      */
-    public static final int ICON_DIMENSION = 120;
+    public static final int ICON_DIMENSION = 90;
     
     public MenuScreen(final ScreenManager screen)
     {
@@ -107,12 +107,12 @@ public class MenuScreen implements Screen, Disposable
         
         y += ScreenManager.BUTTON_Y_INCREMENT;
         addButton(x, y, BUTTON_TEXT_EXIT_GAME, Key.Exit, imageKey);
-
-        x = 30;
+        
+        x = 60;
         y = GamePanel.HEIGHT - (ICON_DIMENSION * 1.25);
         addButton(x, y, Key.Instructions, Assets.ImageMenuKey.Instructions);
         
-        x = 180;
+        x = 195;
         addButton(x, y, Key.Facebook, Assets.ImageMenuKey.Facebook);
         
         x = 330;
@@ -329,7 +329,7 @@ public class MenuScreen implements Screen, Disposable
         if (reset)
         {
             //render splash screen
-            //canvas.drawBitmap(Images.getImage(Assets.ImageMenuKey.Splash), 0, 0, null);
+            canvas.drawBitmap(Images.getImage(Assets.ImageMenuKey.Splash), 0, 0, null);
             
             //we notified the user
             notify = true;

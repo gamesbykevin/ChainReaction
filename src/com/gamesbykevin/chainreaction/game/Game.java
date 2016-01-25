@@ -3,11 +3,14 @@ package com.gamesbykevin.chainreaction.game;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.view.MotionEvent;
 
 import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.androidframework.resources.Font;
 import com.gamesbykevin.androidframework.resources.Images;
 import com.gamesbykevin.chainreaction.assets.Assets;
+import com.gamesbykevin.chainreaction.balls.Balls;
+import com.gamesbykevin.chainreaction.player.Player;
 import com.gamesbykevin.chainreaction.screen.OptionsScreen;
 import com.gamesbykevin.chainreaction.screen.ScreenManager;
 
@@ -29,6 +32,12 @@ public final class Game implements IGame
     //has the player been notified (has the user seen the loading screen)
     private boolean notify = false;
     
+    //the balls in the game
+    private Balls balls;
+    
+    //the player
+    private Player player;
+    
     /**
      * Create our game object
      * @param screen The main screen
@@ -38,6 +47,12 @@ public final class Game implements IGame
     {
         //our main screen object reference
         this.screen = screen;
+        
+        //create a new player
+        this.player = new Player();
+        
+        //create balls container
+        this.balls = new Balls(this.player.getBall());
     }
     
     /**
@@ -47,6 +62,24 @@ public final class Game implements IGame
     public ScreenManager getScreen()
     {
         return this.screen;
+    }
+    
+    /**
+     * Get the balls in play
+     * @return The balls container
+     */
+    public Balls getBalls()
+    {
+    	return this.balls;
+    }
+    
+    /**
+     * Get the player
+     * @return The human controlled player
+     */
+    public Player getPlayer()
+    {
+    	return this.player;
     }
     
     @Override
@@ -122,6 +155,21 @@ public final class Game implements IGame
     	//if reset we can't continue
     	if (hasReset())
     		return;
+    	
+    	//if we stopped touching the screen
+    	if (action == MotionEvent.ACTION_UP)
+    	{
+    		//make sure that the player has lives
+    		if (getPlayer().getLives() > 0)
+    		{
+	    		//update the player's ball location
+	    		getPlayer().getBall().setX(x);
+	    		getPlayer().getBall().setY(y);
+	    		
+	    		//start expanding the ball
+	    		getPlayer().getBall().setExpand(true);
+    		}
+    	}
     }
     
     /**
@@ -136,19 +184,29 @@ public final class Game implements IGame
         	//make sure we have notified first
         	if (hasNotify())
         	{
-	        	//flag reset false
-	        	setReset(false);
-        		
         		//create ships based on the game mode
         		switch (getScreen().getScreenOptions().getIndex(OptionsScreen.Key.Mode))
         		{
         		
         		}
+        		
+        		//reset the balls
+        		getBalls().reset(55);
+        		
+	        	//flag reset false
+	        	setReset(false);
+	        	
+	        	//set the player's lives
+	        	getPlayer().setLives(1);
         	}
         }
         else
         {
+        	//update the balls
+        	getBalls().update();
         	
+        	//update the player
+        	getPlayer().update();
         }
     }
     
@@ -163,14 +221,18 @@ public final class Game implements IGame
     	if (hasReset())
     	{
 			//render loading screen
-			//canvas.drawBitmap(Images.getImage(Assets.ImageMenuKey.Splash), 0, 0, null);
+			canvas.drawBitmap(Images.getImage(Assets.ImageMenuKey.Splash), 0, 0, null);
 			
 			//flag that the user has been notified
 			setNotify(true);
     	}
     	else
     	{
+    		//render the player
+    		getPlayer().render(canvas);
     		
+    		//render the balls
+    		getBalls().render(canvas);
     	}
     }
     
@@ -178,5 +240,17 @@ public final class Game implements IGame
     public void dispose()
     {
         this.paint = null;
+        
+        if (this.balls != null)
+        {
+        	this.balls.dispose();
+        	this.balls = null;
+        }
+        
+        if (this.player != null)
+        {
+        	this.player.dispose();
+        	this.player = null;
+        }
     }
 }
