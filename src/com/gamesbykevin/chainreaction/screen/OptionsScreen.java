@@ -159,9 +159,8 @@ public class OptionsScreen implements Screen, Disposable
     private void addButtonMode(final int x, final int y)
     {
         Button button = new Button(Images.getImage(Assets.ImageMenuKey.Button));
-        button.addDescription("Mode: Classic");
-        button.addDescription("Mode: Co-op");
-        button.addDescription("Mode: Versus");
+        button.addDescription("Mode: Reaction");
+        button.addDescription("Mode: Capture");
         button.setX(x);
         button.setY(y);
         this.buttons.put(Key.Mode, button);
@@ -357,7 +356,9 @@ public class OptionsScreen implements Screen, Disposable
     @Override
     public void update() throws Exception
     {
-        //no updates needed here
+    	//if the game object exists, update it
+    	if (getScreen().getScreenGame().getGame() != null)
+    		getScreen().getScreenGame().getGame().update();
     }
     
     @Override

@@ -30,17 +30,11 @@ public class GameoverScreen implements Screen, Disposable
     //object to paint message
     private Paint paint;
     
-    //the message to display
-    private String message = "";
-    
-    //the additional message to display
-    private String message2 = "";
+    //the messages to display
+    private String message = "", message2 = "";
     
     //where we draw the image
     private int messageX = 0, messageY = 0;
-    
-    //where we draw the additional image
-    private int message2X = 0, message2Y = 0;
     
     //time we have displayed text
     private long time;
@@ -48,7 +42,7 @@ public class GameoverScreen implements Screen, Disposable
     /**
      * The amount of time to wait until we render the game over menu
      */
-    private static final long DELAY_MENU_DISPLAY = 1250L;
+    private static final long DELAY_MENU_DISPLAY = 1000L;
     
     //do we display the menu
     private boolean display = false;
@@ -138,47 +132,49 @@ public class GameoverScreen implements Screen, Disposable
         
         //do we display the menu
         setDisplay(false);
+        
+        //make sure the button text is centered
+        for (Button button : buttons.values())
+        {
+        	button.positionText(screen.getPaint());
+        }
     }
     
     /**
      * Assign the message(s)
      * @param message The message we want displayed
-     * @param message2 The additional message
+     * @param restartText The text to be displayed for the restart button
      */
-    public void setMessage(final String message, final String message2)
+    public void setMessage(final String message, final String message2, final String restartText)
     {
         //assign the message
         this.message = message;
+        
+        //assign the extra message
+        this.message2 = message2;
+        
+        //update restart text
+        this.buttons.get(Key.Restart).setDescription(0, restartText);
         
         //create temporary rectangle
         Rect tmp = new Rect();
         
         //create paint text object for the message
-        if (paint == null)
+        if (this.paint == null)
         {
 	        //assign metrics
-        	paint = new Paint();
-        	paint.setColor(Color.WHITE);
-        	paint.setTextSize(64f);
-	        //paint.setTypeface(Font.getFont(Assets.FontGameKey.Default));
+        	this.paint = new Paint();
+        	this.paint.setTypeface(Font.getFont(Assets.FontGameKey.Default));
+        	this.paint.setColor(Color.WHITE);
+        	this.paint.setTextSize(64f);
         }
         
         //get the rectangle around the message
-        paint.getTextBounds(message, 0, message.length(), tmp);
+        this.paint.getTextBounds(message, 0, message.length(), tmp);
         
         //calculate the position of the message
         messageX = (GamePanel.WIDTH / 2) - (tmp.width() / 2);
-        messageY = (int)(GamePanel.HEIGHT * .175);
-        
-        //store message
-        this.message2 = message2;
-        
-        //get the rectangle around the message
-        paint.getTextBounds(message2, 0, message2.length(), tmp);
-        
-        //calculate the position of the other message
-        message2X = (GamePanel.WIDTH / 2) - (tmp.width() / 2);
-        message2Y = (messageY + tmp.height() * 2);
+        messageY = (int)(GamePanel.HEIGHT * .105);
     }
     
     /**
@@ -218,7 +214,7 @@ public class GameoverScreen implements Screen, Disposable
         			continue;
         		
                 //remove messages
-                setMessage("", "");
+                setMessage("", "", "");
                 
         		//handle each button different
         		switch (key)
@@ -226,7 +222,7 @@ public class GameoverScreen implements Screen, Disposable
         			case Restart:
         			
 	                    //reset with the same settings
-	                    screen.getScreenGame().getGame().reset();
+	                    screen.getScreenGame().getGame().setReset(true);
 	                    
 	                    //move back to the game
 	                    screen.setState(ScreenManager.State.Running);
@@ -272,6 +268,9 @@ public class GameoverScreen implements Screen, Disposable
     @Override
     public void update() throws Exception
     {
+    	//we still want to update the game to continue showing the balls in motion
+    	this.screen.getScreenGame().update();
+    	
         //if not displaying the menu, track timer
         if (!hasDisplay())
         {
@@ -295,8 +294,8 @@ public class GameoverScreen implements Screen, Disposable
             ScreenManager.darkenBackground(canvas);
             
             //render messages
-            canvas.drawText(this.message, messageX, messageY, screen.getPaint());
-            canvas.drawText(this.message2, message2X, message2Y, screen.getPaint());
+            canvas.drawText(this.message, messageX, messageY, this.paint);
+            canvas.drawText(this.message2, messageX, messageY + 500, this.paint);
         
             //render the buttons
             for (Key key : Key.values())

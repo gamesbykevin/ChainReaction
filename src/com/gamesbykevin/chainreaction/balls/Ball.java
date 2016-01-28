@@ -57,7 +57,7 @@ public class Ball extends Entity implements ICommon
 	private long time;
 	
 	//how long do we stay paused
-	private static final long PAUSED_DURATION = 500;
+	private static final long PAUSED_DURATION = 1100;
 	
 	/**
 	 * The speed at which the ball can expand

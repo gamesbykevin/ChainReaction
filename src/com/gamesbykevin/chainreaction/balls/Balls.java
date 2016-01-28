@@ -16,15 +16,18 @@ public class Balls implements ICommon
 	/**
 	 * Default starting size of the balls
 	 */
-	public static final int START_DIMENSION = 16;
+	public static final int START_DIMENSION = 24;
 	
 	/**
 	 * The speed of the ball movement
 	 */
-	private static final double BALL_VELOCITY = 4;
+	private static final double BALL_VELOCITY = 3.0;
 	
 	//reference to the player's ball
 	private final Ball player;
+	
+	//the number we have to achieve to win
+	private int goal;
 	
 	/**
 	 * Default constructor
@@ -39,11 +42,37 @@ public class Balls implements ICommon
 	}
 
 	/**
+	 * Get the goal
+	 * @return The remaining balls needed to reach the goal
+	 */
+	public int getGoal()
+	{
+		return this.goal;
+	}
+	
+	/**
+	 * Set the goal
+	 * @param goal The remaining balls needed to complete the level
+	 */
+	public void setGoal(final int goal)
+	{
+		this.goal = goal;
+		
+		//make sure we are good
+		if (getGoal() < 0)
+			setGoal(0);
+	}
+	
+	/**
 	 * Reset the balls in play<br>
 	 * @param count The number of balls we want to add
+	 * @param goal The number of balls we have to achieve
 	 */
-	public void reset(final int count)
+	public void reset(final int count, final int goal)
 	{
+		//store the goal
+		setGoal(goal);
+		
 		//remove any existing balls
 		get().clear();
 		
@@ -70,12 +99,26 @@ public class Balls implements ICommon
 			//remove type from list
 			types.remove(randomIndex);
 			
-			//set ball location
-			ball.setX(GamePanel.RANDOM.nextInt(GamePanel.WIDTH));
-			ball.setY(GamePanel.RANDOM.nextInt(GamePanel.HEIGHT));
-			
 			//set ball size
 			ball.setDimension(START_DIMENSION);
+			
+			//temporarily expand for collision detection
+			ball.setExpand(true);
+			
+			//pick a location that isn't occupied by a ball
+			while (true)
+			{
+				//pick random location
+				ball.setX(GamePanel.RANDOM.nextInt(GamePanel.WIDTH));
+				ball.setY(GamePanel.RANDOM.nextInt(GamePanel.HEIGHT));
+				
+				//if there is no collision, exit the loop
+				if (!hasCollision(ball))
+					break;
+			}
+			
+			//remove expansion
+			ball.setExpand(false);
 			
 			//pick random velocity
 			ball.setDX(GamePanel.RANDOM.nextBoolean() ? BALL_VELOCITY : -BALL_VELOCITY);
@@ -95,6 +138,27 @@ public class Balls implements ICommon
 		return this.balls;
 	}
 	
+	/**
+	 * Count the total number of balls that have been expanded.
+	 * @return the total number of balls that have expanded true
+	 */
+	public int getExpandedCount()
+	{
+		//keep track of count
+		int count = 0;
+		
+		//check each ball
+		for (Ball ball : get())
+		{
+			//if the ball hasn't been flagged dead and has expanded
+			if (!ball.isDead() && ball.hasExpand())
+				count++;
+		}
+		
+		//return our result
+		return count;
+	}
+	
 	@Override
 	public void dispose() 
 	{
@@ -111,6 +175,42 @@ public class Balls implements ICommon
 		}
 	}
 
+	/**
+	 * Do we have collision?<br>
+	 * Here we are checking to see if 2 balls have collided that are not dead, and at least 1 expanding
+	 * @param ball The ball we want to check against the balls list
+	 * @return true if the specified ball collides with any ball and both are not dead, with at least 1 ball expanding
+	 */
+	private boolean hasCollision(final Ball ball)
+	{
+		//if this ball is dead, we can't check for collision
+		if (ball.isDead())
+			return false;
+		
+		//check each ball in our list
+		for (Ball tmp : get())
+		{
+			//if this is the same ball, skip it
+			if (tmp.hasId(ball))
+				continue;
+			
+			//if this ball is dead, we can't check for collision
+			if (tmp.isDead())
+				continue;
+			
+			//check if we have collision
+			if (tmp.hasCollision(ball))
+			{
+				//if either is expanding, return true
+				if (tmp.hasExpand() || ball.hasExpand())
+					return true;
+			}
+		}
+		
+		//we did not find any collisions
+		return false;
+	}
+	
 	@Override
 	public void update() throws Exception 
 	{
@@ -125,35 +225,17 @@ public class Balls implements ICommon
 				//update ball
 				ball.update();
 				
-				//also check for ball collision with other balls
-				for (int x = 0; x < get().size(); x++)
+				/**
+				 * If this ball collides with any others that aren't dead and expanding.<br>
+				 * We will also expand this ball
+				 */
+				if (hasCollision(ball))
 				{
-					//get the current ball
-					Ball tmp = get().get(x);
+					//if this ball has not expanded yet, take away one from our goal
+					if (!ball.hasExpand())
+						setGoal(getGoal() - 1);
 					
-					//skip because we don't want to check the same ball
-					if (ball.hasId(tmp.getId()))
-						continue;
-					
-					//if the balls don't intersect, we won't bother checking
-					if (!ball.hasCollision(tmp))
-						continue;
-					
-					//make sure the balls aren't dead
-					if (!tmp.isDead() && !ball.isDead())
-					{
-						//determine which ball is expanding
-						if (tmp.hasPause() || tmp.hasExpand())
-						{
-							//flag the other ball expand true
-							ball.setExpand(true);
-						}
-						else if (ball.hasPause() || ball.hasExpand())
-						{
-							//flag the other ball expand true
-							tmp.setExpand(true);
-						}
-					}
+					ball.setExpand(true);
 				}
 				
 				//if the ball is dead, remove it
@@ -167,13 +249,21 @@ public class Balls implements ICommon
 				}
 				else
 				{
-					//if there is collision and the ball is not dead
-					if (!player.isDead() && ball.hasCollision(player))
+					//make sure the player ball isn't dead
+					if (!player.isDead())
 					{
-						//if the ball is not dead let's also check the player's ball
-						if (player.hasPause() || player.hasExpand())
+						//check if the ball collides with the player's ball
+						if (ball.hasCollision(player))
 						{
-							ball.setExpand(true);
+							//if the player's ball is expanding, we will expand this ball
+							if (player.hasExpand())
+							{
+								//if this ball has not expanded yet, take away one from our goal
+								if (!ball.hasExpand())
+									setGoal(getGoal() - 1);
+								
+								ball.setExpand(true);
+							}
 						}
 					}
 				}
@@ -186,10 +276,18 @@ public class Balls implements ICommon
 	{
 		if (get() != null)
 		{
-			//render each ball
+			//render non-expanding balls first
 			for (Ball ball : get())
 			{
-				ball.render(canvas);
+				if (!ball.hasExpand())
+					ball.render(canvas);
+			}
+			
+			//now render the expanding
+			for (Ball ball : get())
+			{
+				if (ball.hasExpand())
+					ball.render(canvas);
 			}
 		}
 	}

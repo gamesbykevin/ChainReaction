@@ -10,11 +10,12 @@ import android.graphics.Canvas;
  */
 public interface IGame extends Disposable
 {
-    /**
-     * Logic to restart the game with the same settings
-     * @throws Exception
-     */
-    public void reset() throws Exception;
+	/**
+	 * Flag reset
+	 * @param reset Do we want to reset the game true = yes, false = no
+	 * @throws Exception
+	 */
+    public void setReset(final boolean reset) throws Exception;
     
     /**
      * Logic to update element

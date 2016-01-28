@@ -310,16 +310,22 @@ public class MenuScreen implements Screen, Disposable
         if (reset && notify)
         {
             //load game assets
-            Assets.load(screen.getPanel().getActivity());
+            Assets.load(getScreen().getPanel().getActivity());
 
             //create the game
-            screen.getScreenGame().createGame();
+            getScreen().getScreenGame().createGame();
 
             //set running state
-            screen.setState(ScreenManager.State.Running);
+            getScreen().setState(ScreenManager.State.Running);
             
             //we are done resetting
             reset = false;
+        }
+        else
+        {
+        	//if the game object exists, update it
+        	if (getScreen().getScreenGame().getGame() != null)
+        		getScreen().getScreenGame().getGame().update();
         }
     }
     

@@ -8,11 +8,14 @@ import android.graphics.Canvas;
 
 public class Player implements ICommon 
 {
-	//number of lives
-	private int lives;
-
 	//the player's ball
 	private Ball ball;
+	
+	//do we have a turn
+	private boolean turn = true;
+	
+	//the player's total score
+	private int score;
 	
 	/**
 	 * Default constructor
@@ -24,6 +27,42 @@ public class Player implements ICommon
 	
 		//reset the ball
 		reset();
+	}
+	
+	/**
+	 * 
+	 * @param score
+	 */
+	public void setScore(final int score)
+	{
+		this.score = score;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public int getScore()
+	{
+		return this.score;
+	}
+	
+	/**
+	 * Flag the player a turn.
+	 * @param turn true = yes, false = no
+	 */
+	public void setTurn(final boolean turn)
+	{
+		this.turn = turn;
+	}
+	
+	/**
+	 * Does the player have a turn?
+	 * @return true = yes, false = no
+	 */
+	public boolean hasTurn()
+	{
+		return this.turn;
 	}
 	
 	/**
@@ -50,26 +89,11 @@ public class Player implements ICommon
 		getBall().setExpand(false);
 		getBall().setPause(false);
 		getBall().setDead(false);
+		
+		//give the player a turn
+		setTurn(true);
 	}
 	
-	/**
-	 * 
-	 * @param lives
-	 */
-	public void setLives(final int lives)
-	{
-		this.lives = lives;
-	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public int getLives()
-	{
-		return this.lives;
-	}
-
 	/**
 	 * Get the players ball
 	 * @return The ball the player controls
@@ -96,16 +120,6 @@ public class Player implements ICommon
 		{
 			//update the ball
 			getBall().update();
-			
-			//reset the ball
-			if (getBall().isDead())
-			{
-				//reset ball
-				reset();
-				
-				//deduct a life
-				setLives(getLives() - 1);
-			}
 		}
 	}
 

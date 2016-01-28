@@ -63,7 +63,7 @@ public class Assets
      */
     public enum FontGameKey
     {
-        //Default
+    	Default
     }
     
     /**
@@ -88,24 +88,7 @@ public class Assets
      */
     public enum ImageGameKey
     {
-    	Balls
-    	/*
-    	Asteroids,
-    	AudioOff,
-    	AudioOn,
-    	Exit,
-    	Explosion,
-    	Fire,
-    	ShipHumanIcon,
-    	ShipCpuIcon,
-    	Lasers,
-    	Pause,
-    	RotateL,
-    	RotateR,
-    	ShipHuman,
-    	ShipCpu,
-    	Thrust
-    	*/
+    	Balls, Hint1, Hint2
     }
     
     /**

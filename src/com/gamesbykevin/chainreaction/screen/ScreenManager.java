@@ -73,7 +73,7 @@ public final class ScreenManager implements Screen, Disposable
     /**
      * The alpha visibility to apply when darkening the background
      */
-    public static final int ALPHA_DARK = 205;
+    public static final int ALPHA_DARK = 115;
     
     /**
      * Default font size
