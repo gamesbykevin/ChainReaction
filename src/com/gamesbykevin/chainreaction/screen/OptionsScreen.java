@@ -159,7 +159,7 @@ public class OptionsScreen implements Screen, Disposable
     private void addButtonMode(final int x, final int y)
     {
         Button button = new Button(Images.getImage(Assets.ImageMenuKey.Button));
-        button.addDescription("Mode: Reaction");
+        button.addDescription("Mode: React");
         button.addDescription("Mode: Capture");
         button.setX(x);
         button.setY(y);
@@ -274,7 +274,7 @@ public class OptionsScreen implements Screen, Disposable
     	                getScreen().setState(ScreenManager.State.Ready);
     	                
     	                //play sound effect
-    	                //Audio.play(Assets.AudioMenuKey.Selection);
+    	                Audio.play(Assets.AudioMenuKey.Selection);
     	                
     	                //no need to continue
     	                return false;
@@ -288,7 +288,7 @@ public class OptionsScreen implements Screen, Disposable
     			        button.positionText(getScreen().getPaint());
     					
     	                //play sound effect
-    	                //Audio.play(Assets.AudioMenuKey.Selection);
+    	                Audio.play(Assets.AudioMenuKey.Selection);
     	                
                         //no need to continue
                         return false;
@@ -305,7 +305,7 @@ public class OptionsScreen implements Screen, Disposable
                         Audio.setAudioEnabled(!Audio.isAudioEnabled());
                         
                         //play sound effect
-                        //Audio.play(Assets.AudioMenuKey.Selection);
+                        Audio.play(Assets.AudioMenuKey.Selection);
                         
                         //exit loop
                         return false;
@@ -313,7 +313,7 @@ public class OptionsScreen implements Screen, Disposable
     				case Instructions:
     					
     	                //play sound effect
-    	                //Audio.play(Assets.AudioMenuKey.Selection);
+    	                Audio.play(Assets.AudioMenuKey.Selection);
     	                
     	                //go to instructions
     					getScreen().getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_GAME_INSTRUCTIONS_URL);
@@ -324,7 +324,7 @@ public class OptionsScreen implements Screen, Disposable
     				case Facebook:
     					
     	                //play sound effect
-    	                //Audio.play(Assets.AudioMenuKey.Selection);
+    	                Audio.play(Assets.AudioMenuKey.Selection);
     	                
     	                //go to instructions
     					getScreen().getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_FACEBOOK_URL);
@@ -335,7 +335,7 @@ public class OptionsScreen implements Screen, Disposable
     				case Twitter:
     					
     	                //play sound effect
-    	                //Audio.play(Assets.AudioMenuKey.Selection);
+    	                Audio.play(Assets.AudioMenuKey.Selection);
     	                
     	                //go to instructions
     					getScreen().getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_TWITTER_URL);

@@ -17,9 +17,20 @@ public class Ball extends Entity implements ICommon
 	public static final int SPRITE_DIMENSION = 128;
 	
 	/**
+	 * The size of the animation for the explosion
+	 */
+	//public static final int EXPLOSION_DIMENSION = 134;
+	public static final int EXPLOSION_DIMENSION = 140;
+	
+	/**
 	 * Default key for the single animation
 	 */
 	public static final String DEFAULT_KEY = "Default";
+	
+	/**
+	 * Unique key for the explosion animation
+	 */
+	public static final String EXPLOSION_KEY = "Explosion";
 	
 	/**
 	 * Different types of balls
@@ -57,7 +68,12 @@ public class Ball extends Entity implements ICommon
 	private long time;
 	
 	//how long do we stay paused
-	private static final long PAUSED_DURATION = 1100;
+	public static final long PAUSED_DURATION = 1100L;
+	
+	/**
+	 * The duration of each frame in our explosion (milliseconds)
+	 */
+	public static final long EXPLOSION_DURATION = 75L;
 	
 	/**
 	 * The speed at which the ball can expand
@@ -93,11 +109,44 @@ public class Ball extends Entity implements ICommon
 			SPRITE_DIMENSION
 		);
 			
+		//the animation will not loop
+		animation.setLoop(false);
+		
 		//add single animation to sprite sheet
 		super.getSpritesheet().add(DEFAULT_KEY, animation);
 		
 		//set a default size
 		this.setDimension(SPRITE_DIMENSION);
+	}
+	
+	/**
+	 * Add and set the explosion animation.<br>
+	 */
+	public void addExplosion()
+	{
+		//only add explosion animation if it already doesn't exist
+		if (super.getSpritesheet().get(EXPLOSION_KEY) == null)
+		{
+			Animation animation = new Animation(Images.getImage(Assets.ImageGameKey.Explosion), 0, 0, EXPLOSION_DIMENSION, EXPLOSION_DIMENSION, 9, 1, 9);
+			
+			//the animation will not loop
+			animation.setLoop(false);
+			
+			//set the frame delay
+			animation.setDelay(EXPLOSION_DURATION);
+			
+			//add animation to sprite sheet
+			super.getSpritesheet().add(EXPLOSION_KEY, animation);
+		}
+		
+		//increase the size of the explosion
+		this.setDimension(getWidth() * 3);
+		
+		//set it as current animation
+		super.getSpritesheet().setKey(EXPLOSION_KEY);
+		
+		//make sure animation starts from the beginning
+		super.getSpritesheet().get().reset();
 	}
 	
 	/**
@@ -181,6 +230,9 @@ public class Ball extends Entity implements ICommon
 	@Override
 	public void update() throws Exception 
 	{
+		//update the current assigned animation
+		super.getSpritesheet().update();
+		
 		//if we are expanding
 		if (hasExpand())
 		{
@@ -235,8 +287,8 @@ public class Ball extends Entity implements ICommon
 	@Override
 	public void render(final Canvas canvas) throws Exception
 	{
-		//skip if dead
-		if (isDead())
+		//skip if dead and the animation has finished
+		if (isDead() && super.getSpritesheet().get().hasFinished() || getWidth() < 1 || getHeight() < 1)
 			return;
 		
 		//store original location

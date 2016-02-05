@@ -202,21 +202,31 @@ public final class ScreenManager implements Screen, Disposable
 	        }
 	        else if (state == State.GameOver)
 	        {
-	            //stop sound
-	            Audio.stop();
-	            
 	            if (getState() != State.Paused)
 	            {
 	                //reset screen
 	                getScreen(state).reset();
 	            }
 	        }
-	        
-	        //if we are not running
-	        if (getState() != State.Running)
+	        else if (state == State.Ready)
 	        {
-	            //stop sound
-	            Audio.stop();
+	        	//if we are on the menu for the first time or coming from any state besides the options
+	        	if (getState() == null || getState() != State.Options)
+	        	{
+	        		//stop all sound
+	        		Audio.stop();
+	        		
+	        		//play menu theme
+	        		Audio.play(Assets.AudioMenuKey.Theme, true);
+	        	}
+	        }
+	        else if (state == State.Running)
+	        {
+	        	//stop all sound
+	        	Audio.stop();
+	        	
+	        	//play song
+	        	Audio.play(Assets.AudioGameKey.Music, true);
 	        }
     	}
     	finally

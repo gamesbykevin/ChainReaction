@@ -17,6 +17,9 @@ public class Player implements ICommon
 	//the player's total score
 	private int score;
 	
+	//have we moved the ball
+	private boolean move = false;
+	
 	/**
 	 * Default constructor
 	 */
@@ -27,6 +30,24 @@ public class Player implements ICommon
 	
 		//reset the ball
 		reset();
+	}
+	
+	/**
+	 * Flag the player move
+	 * @param move Have we moved the player's ball, true = yes, false = no
+	 */
+	public void setMove(final boolean move)
+	{
+		this.move = move;
+	}
+	
+	/**
+	 * Have we moved the player's ball?
+	 * @return true = yes, false = no
+	 */
+	public boolean hasMove()
+	{
+		return this.move;
 	}
 	
 	/**
@@ -74,8 +95,14 @@ public class Player implements ICommon
 	 */
 	public final void reset()
 	{
+		//make sure the players ball has the explosion animation
+		getBall().addExplosion();
+		
 		//set the size of the ball
 		getBall().setDimension(Balls.START_DIMENSION);
+		
+		//reset animation
+		getBall().getSpritesheet().setKey(Ball.DEFAULT_KEY);
 		
 		//place the ball off the screen for now
 		getBall().setX(-getBall().getWidth());
@@ -92,6 +119,9 @@ public class Player implements ICommon
 		
 		//give the player a turn
 		setTurn(true);
+		
+		//flag move false
+		setMove(false);
 	}
 	
 	/**

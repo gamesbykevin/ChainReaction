@@ -17,7 +17,7 @@ public final class Settings extends Internal
     /**
      * This string will separate each setting
      */
-    private static final String SEPARATOR = ";";
+    public static final String SEPARATOR = ";";
     
     public Settings(final OptionsScreen screen, final Activity activity)
     {

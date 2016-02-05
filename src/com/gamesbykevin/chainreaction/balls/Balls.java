@@ -3,8 +3,11 @@ package com.gamesbykevin.chainreaction.balls;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.gamesbykevin.chainreaction.assets.Assets;
 import com.gamesbykevin.chainreaction.common.ICommon;
+import com.gamesbykevin.chainreaction.game.Game;
 import com.gamesbykevin.chainreaction.panel.GamePanel;
+import com.gamesbykevin.chainreaction.player.Player;
 
 import android.graphics.Canvas;
 
@@ -23,16 +26,37 @@ public class Balls implements ICommon
 	 */
 	private static final double BALL_VELOCITY = 3.0;
 	
-	//reference to the player's ball
-	private final Ball player;
+	//reference to the player
+	private final Player player;
 	
 	//the number we have to achieve to win
 	private int goal;
 	
+	//the game mode playing
+	private int modeIndex = 0;
+	
+	//time to track when spawning a new ball
+	private long time;
+	
+	/**
+	 * The range of size in balls for capture mode
+	 */
+	private static final int SPAWN_RANGE = 20;
+	
+	/**
+	 * The pixel amount increase for capture mode
+	 */
+	private static final int CAPTURE_INCREASE = 2;
+	
+	/**
+	 * The delay until a new ball can be spawned for capture mode (milliseconds)
+	 */
+	private static final long SPAWN_DELAY = 3500;
+	
 	/**
 	 * Default constructor
 	 */
-	public Balls(final Ball player) 
+	public Balls(final Player player) 
 	{
 		//the reference to the player's ball
 		this.player = player;
@@ -67,9 +91,16 @@ public class Balls implements ICommon
 	 * Reset the balls in play<br>
 	 * @param count The number of balls we want to add
 	 * @param goal The number of balls we have to achieve
+	 * @param modeIndex The game mode playing
 	 */
-	public void reset(final int count, final int goal)
+	public void reset(final int count, final int goal, final int modeIndex)
 	{
+		//store the game mode
+		this.modeIndex = modeIndex;
+		
+		//update the time
+		this.time = System.currentTimeMillis();
+		
 		//store the goal
 		setGoal(goal);
 		
@@ -216,6 +247,9 @@ public class Balls implements ICommon
 	{
 		if (get() != null)
 		{
+			//do we play a collision sound
+			boolean sound = false;
+			
 			//update each ball
 			for (int i = 0; i < get().size(); i++)
 			{
@@ -225,52 +259,238 @@ public class Balls implements ICommon
 				//update ball
 				ball.update();
 				
-				/**
-				 * If this ball collides with any others that aren't dead and expanding.<br>
-				 * We will also expand this ball
-				 */
-				if (hasCollision(ball))
+				switch (this.modeIndex)
 				{
-					//if this ball has not expanded yet, take away one from our goal
-					if (!ball.hasExpand())
-						setGoal(getGoal() - 1);
-					
-					ball.setExpand(true);
-				}
-				
-				//if the ball is dead, remove it
-				if (ball.isDead())
-				{
-					//remove from list
-					get().remove(i);
-					
-					//adjust index
-					i--;
-				}
-				else
-				{
-					//make sure the player ball isn't dead
-					if (!player.isDead())
-					{
-						//check if the ball collides with the player's ball
-						if (ball.hasCollision(player))
+					//reaction mode
+					case Game.MODE_REACTION:
+						/**
+						 * If this ball collides with any others that aren't dead and expanding.<br>
+						 * We will also expand this ball
+						 */
+						if (hasCollision(ball))
 						{
-							//if the player's ball is expanding, we will expand this ball
-							if (player.hasExpand())
+							//if this ball has not expanded yet, take away one from our goal
+							if (!ball.hasExpand())
 							{
-								//if this ball has not expanded yet, take away one from our goal
-								if (!ball.hasExpand())
-									setGoal(getGoal() - 1);
+								//decrease the goal
+								setGoal(getGoal() - 1);
 								
-								ball.setExpand(true);
+								//flag true to play random sound effect
+								sound = true;
+							}
+							
+							ball.setExpand(true);
+						}
+						
+						//if the ball is dead, remove it
+						if (ball.isDead())
+						{
+							//remove from list
+							get().remove(i);
+							
+							//adjust index
+							i--;
+						}
+						else
+						{
+							//make sure the player ball isn't dead
+							if (!player.getBall().isDead())
+							{
+								//check if the ball collides with the player's ball
+								if (ball.hasCollision(player.getBall()))
+								{
+									//if the player's ball is expanding, we will expand this ball
+									if (player.getBall().hasExpand())
+									{
+										//if this ball has not expanded yet, take away one from our goal
+										if (!ball.hasExpand())
+										{
+											//decrease the goal
+											setGoal(getGoal() - 1);
+											
+											//flag true to play random sound effect
+											sound = true;
+										}
+										
+										ball.setExpand(true);
+									}
+								}
 							}
 						}
+						break;
+						
+					//capture mode
+					case Game.MODE_CAPTURE:
+						
+						//if ball is off screen we want to remove it
+						if (ball.getDX() < 0 && ball.getX() < -ball.getWidth() || 
+							ball.getDX() > 0 && ball.getX() > GamePanel.WIDTH + ball.getWidth() ||
+							ball.getDY() < 0 && ball.getY() < -ball.getHeight() ||
+							ball.getDY() > 0 && ball.getY() > GamePanel.HEIGHT + ball.getHeight())
+						{
+							//remove from list
+							get().remove(i);
+							
+							//adjust index
+							i--;
+						}
+						
+						//check if the ball has collided with the player's ball
+						if (ball.hasCollision(player.getBall()))
+						{
+							//make sure the player's ball is not dead
+							if (!player.getBall().isDead())
+							{
+								//check if the player's ball is bigger
+								if (player.getBall().getWidth() > ball.getWidth())
+								{
+									//remove from list
+									get().remove(i);
+									
+									//adjust index
+									i--;
+									
+									//increase the player's ball size
+									player.getBall().setDimension(player.getBall().getWidth() + CAPTURE_INCREASE);
+									
+									//increase the player's score
+									player.setScore(player.getScore() + 1);
+									
+									//to keep it challenging immediately spawn another ball
+									spawnBall();
+									
+									//play collision sound
+									sound = true;
+								}
+								else
+								{
+									//the player's turn is over
+									player.setTurn(false);
+									
+									//ball is dead
+									player.getBall().setDead(true);
+									
+									//add the explosion
+									player.getBall().addExplosion();
+								}
+							}
+						}
+						break;
+				}
+			}
+			
+			//if we are to play a collision sound effect
+			if (sound)
+				Assets.playCollisionSound();
+			
+			//check if we need to spawn any new balls for capture mode
+			if (this.modeIndex == Game.MODE_CAPTURE)
+			{
+				//check if time to add a ball
+				if (System.currentTimeMillis() - this.time >= SPAWN_DELAY)
+				{
+					//also make sure the player has a turn
+					if (this.player.hasTurn())
+					{
+						//update last time update
+						this.time = System.currentTimeMillis();
+					
+						//add a new ball
+						spawnBall();
 					}
 				}
 			}
 		}
 	}
 
+	/**
+	 * Spawn a new ball, used in Capture mode
+	 */
+	private void spawnBall()
+	{
+		//pick a random width difference within 10 pixels of the player's ball
+		int width = GamePanel.RANDOM.nextInt(SPAWN_RANGE * 2) - SPAWN_RANGE;
+		
+		//create a new ball of random type
+		Ball ball = new Ball(Ball.Type.values()[GamePanel.RANDOM.nextInt(Ball.Type.values().length)]);
+		
+		//set ball size
+		ball.setDimension(player.getBall().getWidth() + width);
+		
+		//make sure width is large enough
+		if (ball.getWidth() < (player.getBall().getWidth() / 2))
+			ball.setDimension(player.getBall().getWidth() / 2);
+		
+		//where to spawn the ball
+		if (GamePanel.RANDOM.nextBoolean())
+		{
+			if (GamePanel.RANDOM.nextBoolean())
+			{
+				//place ball on west side
+				ball.setX(-ball.getWidth());
+				
+				//velocity will be east
+				ball.setDX((GamePanel.RANDOM.nextDouble() * BALL_VELOCITY) + BALL_VELOCITY);
+			}
+			else
+			{
+				//place ball on east side
+				ball.setX(GamePanel.WIDTH + ball.getWidth());
+				
+				//velocity will be west
+				ball.setDX((GamePanel.RANDOM.nextDouble() * -BALL_VELOCITY) - BALL_VELOCITY);
+			}
+			
+			//pick random location
+			ball.setY(GamePanel.RANDOM.nextInt(GamePanel.HEIGHT));
+			
+			//pick random y velocity
+			if (GamePanel.RANDOM.nextBoolean())
+			{
+				ball.setDY((GamePanel.RANDOM.nextDouble() * -BALL_VELOCITY) - BALL_VELOCITY);
+			}
+			else
+			{
+				ball.setDY((GamePanel.RANDOM.nextDouble() * BALL_VELOCITY) + BALL_VELOCITY);
+			}
+		}
+		else
+		{
+			if (GamePanel.RANDOM.nextBoolean())
+			{
+				//place ball on north side
+				ball.setY(-ball.getHeight());
+				
+				//velocity will be south
+				ball.setDY((GamePanel.RANDOM.nextDouble() * BALL_VELOCITY) + BALL_VELOCITY);
+			}
+			else
+			{
+				//place ball on south side
+				ball.setY(GamePanel.HEIGHT + ball.getHeight());
+				
+				//velocity will be north
+				ball.setDY((GamePanel.RANDOM.nextDouble() * -BALL_VELOCITY) - BALL_VELOCITY);
+			}
+			
+			//pick random location
+			ball.setX(GamePanel.RANDOM.nextInt(GamePanel.WIDTH));
+			
+			//pick random x velocity
+			if (GamePanel.RANDOM.nextBoolean())
+			{
+				ball.setDX((GamePanel.RANDOM.nextDouble() * -BALL_VELOCITY) - BALL_VELOCITY);
+			}
+			else
+			{
+				ball.setDX((GamePanel.RANDOM.nextDouble() * BALL_VELOCITY) + BALL_VELOCITY);
+			}
+		}
+			
+		//add ball to the list
+		get().add(ball);
+	}
+	
 	@Override
 	public void render(Canvas canvas) throws Exception 
 	{

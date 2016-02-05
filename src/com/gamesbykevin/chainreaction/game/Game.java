@@ -1,8 +1,10 @@
 package com.gamesbykevin.chainreaction.game;
 
+import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Vibrator;
 import android.view.MotionEvent;
 
 import com.gamesbykevin.androidframework.resources.Audio;
@@ -10,10 +12,12 @@ import com.gamesbykevin.androidframework.resources.Font;
 import com.gamesbykevin.androidframework.resources.Images;
 import com.gamesbykevin.chainreaction.assets.Assets;
 import com.gamesbykevin.chainreaction.balls.Balls;
+import com.gamesbykevin.chainreaction.panel.GamePanel;
 import com.gamesbykevin.chainreaction.player.Player;
 import com.gamesbykevin.chainreaction.screen.OptionsScreen;
 import com.gamesbykevin.chainreaction.screen.ScreenManager;
 import com.gamesbykevin.chainreaction.screen.ScreenManager.State;
+import com.gamesbykevin.chainreaction.storage.score.Score;
 
 /**
  * The main game logic will happen here
@@ -26,6 +30,9 @@ public final class Game implements IGame
     
     //paint object to draw text
     private Paint paint;
+    
+    //the paint object we use to render the hint
+    private Paint paintHint;
     
     //is the game being reset
     private boolean reset = false;
@@ -93,8 +100,35 @@ public final class Game implements IGame
     	}
     }
     
+    /**
+     * Reaction mode
+     */
+    public static final int MODE_REACTION = 0;
+    
+    /**
+     * Capture mode
+     */
+    public static final int MODE_CAPTURE = 1;
+    
     //keep track of the current level
     private int levelIndex = 0;
+    
+    //the player's coordinates when moving
+    private float playerX, playerY;
+    
+    //keep track of the time to fade the hint text away
+    private long time;
+    
+    /**
+     * The amount of time it takes to fade the hint text away completely (milliseconds)
+     */
+    private static final long HINT_FADE_DURATION = 3750L;
+    
+    //track the best score for each mode index
+    private Score scoreboard;
+    
+    //the duration we want to vibrate the phone for
+    private static final long VIBRATION_DURATION = 500L;
     
     /**
      * Create our game object
@@ -106,11 +140,34 @@ public final class Game implements IGame
         //our main screen object reference
         this.screen = screen;
         
+        //create a new score board
+        this.scoreboard = new Score(screen.getScreenOptions(), screen.getPanel().getActivity());
+        
         //create a new player
         this.player = new Player();
         
         //create balls container
-        this.balls = new Balls(this.player.getBall());
+        this.balls = new Balls(this.player);
+    }
+    
+    private void setHint(final boolean hint)
+    {
+    	if (!hint && this.hint || hint)
+    	{
+    		//store time to check duration
+    		this.time = System.currentTimeMillis();
+    		
+    		//reset back to 100% visibility
+    		this.getPaintHint().setAlpha(255);
+    	}
+    	
+    	//store the value
+    	this.hint = hint;
+    }
+    
+    private boolean hasHint()
+    {
+    	return this.hint;
     }
     
     /**
@@ -141,6 +198,15 @@ public final class Game implements IGame
     }
     
     /**
+     * Get the score board
+     * @return The object containing the personal best records
+     */
+    private Score getScoreboard()
+    {
+    	return this.scoreboard;
+    }
+    
+    /**
      * Get the balls in play
      * @return The balls container
      */
@@ -166,18 +232,9 @@ public final class Game implements IGame
     	//make sure we have notified first
     	if (hasNotify())
     	{
-    		//store the mode index
-    		this.modeIndex = getScreen().getScreenOptions().getIndex(OptionsScreen.Key.Mode); 
-
     		//display hint if the player does not have a score
-    		this.hint = (getPlayer().getScore() == 0);
-    		
-    		//reset the balls according to the current level
-    		getBalls().reset(
-    			Level.values()[levelIndex].getCount(), 
-    			Level.values()[levelIndex].getGoal()
-    		);
-    		
+    		setHint(getPlayer().getScore() == 0);
+
         	//flag reset false
         	setReset(false);
         	
@@ -186,6 +243,37 @@ public final class Game implements IGame
         	
         	//flag game over false
         	setGameover(false);
+        	
+    		//reset depending on the game mode
+    		switch (getScreen().getScreenOptions().getIndex(OptionsScreen.Key.Mode))
+    		{
+				case MODE_REACTION:
+					
+					//store the mode
+					this.modeIndex = MODE_REACTION;
+					
+		    		//reset the balls according to the current level
+		    		getBalls().reset(
+		    			Level.values()[getLevelIndex()].getCount(), 
+		    			Level.values()[getLevelIndex()].getGoal(),
+		    			this.modeIndex
+		    		);
+					break;
+					
+				case MODE_CAPTURE:
+					
+					//store the mode
+					this.modeIndex = MODE_CAPTURE;
+					
+		    		//reset the balls
+		    		getBalls().reset(0, 0, this.modeIndex);
+		    		
+		    		//place player ball in the middle
+		    		getPlayer().getBall().setX(GamePanel.WIDTH / 2);
+		    		getPlayer().getBall().setY(GamePanel.HEIGHT / 2);
+					break;
+	    		
+    		}
     	}
     }
     
@@ -268,6 +356,21 @@ public final class Game implements IGame
         return this.paint;
     }
     
+    /**
+     * Get the paint object
+     * @return The paint object we use for the hint
+     */
+    private Paint getPaintHint()
+    {
+    	if (this.paintHint == null)
+    	{
+    		this.paintHint = new Paint();
+    		this.paintHint.setAlpha(255);
+    	}
+    	
+    	return this.paintHint;
+    }
+    
     @Override
     public void update(final int action, final float x, final float y) throws Exception
     {
@@ -275,10 +378,12 @@ public final class Game implements IGame
     	if (hasReset())
     		return;
     	
+    	//update motion event based on game mode
     	switch (modeIndex)
     	{
 	    	//chain reaction
-	    	case 0:
+	    	case MODE_REACTION:
+	    		
 	        	//if we stopped touching the screen
 	        	if (action == MotionEvent.ACTION_UP)
 	        	{
@@ -286,7 +391,7 @@ public final class Game implements IGame
 	        		if (getPlayer().hasTurn())
 	        		{
 	        			//turn off hint
-	        			this.hint = false;
+	        			setHint(false);
 	        			
 	    	    		//update the player's ball location
 	    	    		getPlayer().getBall().setX(x);
@@ -302,15 +407,52 @@ public final class Game implements IGame
 	    		break;
 	    		
 	    	//capture
-	    	case 1:
-	        	if (action == MotionEvent.ACTION_MOVE)
-	        	{
-	        		//make sure the player can play
-	        		if (getPlayer().hasTurn())
-	        		{
-	        			
-	        		}
-	        	}
+	    	case MODE_CAPTURE:
+	    		
+        		//make sure the player can play
+        		if (getPlayer().hasTurn())
+        		{
+		    		if (action == MotionEvent.ACTION_DOWN)
+		    		{
+	    				//store the initial coordinates
+	    				this.playerX = x;
+	    				this.playerY = y;
+		    		}
+		    		else if (action == MotionEvent.ACTION_MOVE)
+		        	{
+		    			//calculate the x,y movement
+		    			final float xDiff = x - this.playerX; 
+		    			final float yDiff = y - this.playerY;
+		    			
+		        		//compare the difference to move the player's ball
+		    			getPlayer().getBall().setX(getPlayer().getBall().getX() + xDiff);
+		    			getPlayer().getBall().setY(getPlayer().getBall().getY() + yDiff);
+		    			
+		    			//here we will keep the ball on screen
+		    			if (getPlayer().getBall().getX() > GamePanel.WIDTH - (getPlayer().getBall().getWidth() / 2))
+		    			{
+		    				getPlayer().getBall().setX(GamePanel.WIDTH - (getPlayer().getBall().getWidth() / 2));
+		    			}
+		    			else if (getPlayer().getBall().getX() < (getPlayer().getBall().getWidth() / 2))
+		    			{
+		    				getPlayer().getBall().setX((getPlayer().getBall().getWidth() / 2));
+		    			}
+		    			
+		    			//here we will keep the ball on screen
+		    			if (getPlayer().getBall().getY() > GamePanel.HEIGHT - (getPlayer().getBall().getHeight() / 2))
+		    			{
+		    				getPlayer().getBall().setY(GamePanel.HEIGHT - (getPlayer().getBall().getHeight() / 2));
+		    			}
+		    			else if (getPlayer().getBall().getY() < (getPlayer().getBall().getHeight() / 2))
+		    			{
+		    				getPlayer().getBall().setY((getPlayer().getBall().getHeight() / 2));
+		    			}
+		    			
+		    			//assign the new location
+		    			this.playerX = x;
+		    			this.playerY = y;
+		        	}
+    			}
 	    		break;
     	}
     }
@@ -329,11 +471,35 @@ public final class Game implements IGame
         }
         else
         {
+        	//store the score
+        	final int tmp = getPlayer().getScore();
+        	
         	//update the balls
         	getBalls().update();
         	
         	//update the player
         	getPlayer().update();
+        	
+        	//if we have a score, ensure the hint is turned off
+        	if (tmp == 0 && getPlayer().getScore() > 0)
+        		setHint(false);
+        	
+        	//if we are to hide the hint
+        	if (!hasHint())
+        	{
+        		if (getPaintHint().getAlpha() > 0)
+        		{
+        			//determine the current alpha transparency
+        			int alpha = (int)(((float)(HINT_FADE_DURATION - (System.currentTimeMillis() - this.time)) / (float)HINT_FADE_DURATION) * 255); 
+        			
+        			//make sure we maintain a valid value
+        			if (alpha < 0)
+        				alpha = 0;
+        			
+        			//assign the transparency
+        			getPaintHint().setAlpha(alpha);
+        		}
+        	}
         	
         	//if the player doesn't have a turn, and the ball is dead
         	if (!getPlayer().hasTurn() && getPlayer().getBall().isDead())
@@ -350,49 +516,109 @@ public final class Game implements IGame
 		        		//change the state
 		        		getScreen().setState(State.GameOver);
 		        		
-		        		//find out how many balls were killed, for the score
-		        		final int score = Level.values()[getLevelIndex()].getCount() - getBalls().get().size();
-		        		
-		        		//update the players score
-		        		getPlayer().setScore(getPlayer().getScore() + score);
-		        		
-		        		//make sure we met the goal
-		        		if (getBalls().getGoal() < 1)
+		        		switch (this.modeIndex)
 		        		{
-		        			//move to the next level
-		        			setLevelIndex(getLevelIndex() + 1);
-		        			
-		        			//make sure we don't exceed past the last level
-		        			if (getLevelIndex() >= Level.values().length)
-		        			{
-		        				//start back at 0
-		        				setLevelIndex(0);
+			        		case MODE_REACTION:
+			        			
+				        		//find out how many balls were killed, for the score
+				        		final int score = Level.values()[getLevelIndex()].getCount() - getBalls().get().size();
+				        		
+				        		//update the players score
+				        		getPlayer().setScore(getPlayer().getScore() + score);
+				        		
+				        		//make sure we met the goal
+				        		if (getBalls().getGoal() < 1)
+				        		{
+				        			//move to the next level
+				        			setLevelIndex(getLevelIndex() + 1);
+				        			
+				        			//make sure we don't exceed past the last level
+				        			if (getLevelIndex() >= Level.values().length)
+				        			{
+				        				//update the score if it is a personal best
+				        				final boolean result = getScoreboard().updateScore(this.modeIndex, getPlayer().getScore());
+				        				
+				        				//start back at 0
+				        				setLevelIndex(0);
+				        				
+				        				//update message
+				        				getScreen().getScreenGameover().setMessage(false, result, "Score: " + getPlayer().getScore(), (result) ? "" : "High: " + getScoreboard().getHighScore(this.modeIndex), "New Game");
+				        				
+				        				//reset the score
+						        		getPlayer().setScore(0);
+						        		
+										//stop all other sound
+										Audio.stop();
+										
+										//play game over sound
+										Audio.play(Assets.AudioGameKey.Lose);
+				        			}
+				        			else
+				        			{
+				        				//update message
+				        				getScreen().getScreenGameover().setMessage(true, false, "Score: " + getPlayer().getScore(), "", "Next");
+				        				
+										//stop all other sound
+										Audio.stop();
+										
+										//play game over sound
+										Audio.play(Assets.AudioGameKey.Win);
+				        			}
+				        		}
+				        		else
+				        		{
+			        				//start back at 0
+				        			setLevelIndex(0);
+			        				
+			        				//ensure at this point the hint has been removed
+			        				hint = false;
+			        				
+			        				//update the score if it is a personal best
+			        				final boolean result = getScoreboard().updateScore(this.modeIndex, getPlayer().getScore());
+			        				
+				        			//we did not meet the goal, game over
+					        		getScreen().getScreenGameover().setMessage(false, result, "Score: " + getPlayer().getScore(), (result) ? "" : "High: " + getScoreboard().getHighScore(this.modeIndex), "Retry");
+					        		
+					        		//after we update the message, reset score
+					        		getPlayer().setScore(0);
+					        		
+									//vibrate the phone
+									vibrate();
+									
+									//stop all other sound
+									Audio.stop();
+																		
+									//play game over sound
+									Audio.play(Assets.AudioGameKey.Lose);
+				        		}
+				        		break;
+				        		
+			        		case MODE_CAPTURE:
+			        			
+		        				//ensure at this point the hint has been removed
+		        				hint = false;
 		        				
-		        				//update message
-		        				getScreen().getScreenGameover().setMessage("You won!!!", "Score: " + getPlayer().getScore(), "New Game");
+		        				//update the score if it is a personal best
+		        				final boolean result = getScoreboard().updateScore(this.modeIndex, getPlayer().getScore());
 		        				
-		        				//reset the score
+			        			//assign game over message
+				        		getScreen().getScreenGameover().setMessage(false, result, "Score: " + getPlayer().getScore(), (result) ? "" : "High: " + getScoreboard().getHighScore(this.modeIndex), "Retry");
+				        		
+				        		//after we update the message, reset score
 				        		getPlayer().setScore(0);
-		        			}
-		        			else
-		        			{
-		        				//update message
-		        				getScreen().getScreenGameover().setMessage("Success", "", "Next");
-		        			}
-		        		}
-		        		else
-		        		{
-	        				//start back at 0
-		        			setLevelIndex(0);
-	        				
-	        				//ensure at this point the hint has been removed
-	        				hint = false;
-	        				
-		        			//we did not meet the goal, game over
-			        		getScreen().getScreenGameover().setMessage("Game Over", "Score: " + getPlayer().getScore(), "Restart");
-			        		
-			        		//after we update the message, reset score
-			        		getPlayer().setScore(0);
+				        		
+								//vibrate the phone
+								vibrate();
+								
+								//stop all other sound
+								Audio.stop();
+								
+								//play the explosion
+								Audio.play(Assets.AudioGameKey.Explosion);
+								
+								//play game over sound
+								Audio.play(Assets.AudioGameKey.Lose);
+			        			break;
 		        		}
 		        		
         				//reset text position
@@ -401,6 +627,22 @@ public final class Game implements IGame
         		}
         	}
         }
+    }
+    
+    /**
+     * Vibrate the phone if the setting is enabled
+     */
+    private void vibrate()
+    {
+		//make sure vibrate option is enabled
+		if (getScreen().getScreenOptions().getIndex(OptionsScreen.Key.Vibrate) == 0)
+		{
+    		//get our vibrate object
+    		Vibrator v = (Vibrator) getScreen().getPanel().getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+    		 
+			//vibrate for a specified amount of milliseconds
+			v.vibrate(VIBRATION_DURATION);
+		}
     }
     
     /**
@@ -421,16 +663,16 @@ public final class Game implements IGame
     	}
     	else
     	{
-    		//if we are to render the hint
-    		if (hint)
+    		//only render the hint if we can see it
+    		if (getPaintHint().getAlpha() > 0)
     		{
-    			//render hint text
-    			canvas.drawBitmap(
-    				(modeIndex == 0) ? Images.getImage(Assets.ImageGameKey.Hint1): Images.getImage(Assets.ImageGameKey.Hint2), 
-    				HINT_X, 
-    				HINT_Y, 
-    				getPaint()
-    			);
+				//render hint text
+				canvas.drawBitmap(
+					(modeIndex == MODE_REACTION) ? Images.getImage(Assets.ImageGameKey.Hint1): Images.getImage(Assets.ImageGameKey.Hint2), 
+					HINT_X, 
+					HINT_Y, 
+					getPaintHint()
+				);
     		}
     		
     		//make sure game isn't over
@@ -440,15 +682,15 @@ public final class Game implements IGame
 	    		switch (modeIndex)
 	    		{
 		    		//reaction
-		    		case 0:
+		    		case MODE_REACTION:
 		        		//render the current score progress etc....
 		        		canvas.drawText("Goal: " + getBalls().getGoal(), 175, 775, getPaint());
 		    			break;
 		    			
 		    		//capture
-		    		case 1:
+		    		case MODE_CAPTURE:
 		        		//render the current score progress etc....
-		        		canvas.drawText("Score: " + getPlayer().getScore(), 175, 775, getPaint());
+		        		canvas.drawText("Score: " + getPlayer().getScore(), 145, 775, getPaint());
 		    			break;
 	    		}
 			}
@@ -476,6 +718,12 @@ public final class Game implements IGame
         {
         	this.player.dispose();
         	this.player = null;
+        }
+        
+        if (this.scoreboard != null)
+        {
+        	this.scoreboard.dispose();
+        	this.scoreboard = null;
         }
     }
 }

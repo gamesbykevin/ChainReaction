@@ -4,6 +4,7 @@ import com.gamesbykevin.androidframework.resources.Audio;
 import com.gamesbykevin.androidframework.resources.Files;
 import com.gamesbykevin.androidframework.resources.Font;
 import com.gamesbykevin.androidframework.resources.Images;
+import com.gamesbykevin.chainreaction.panel.GamePanel;
 
 import android.app.Activity;
 
@@ -71,15 +72,18 @@ public class Assets
      */
     public enum ImageMenuKey
     {
-    	Background,
-    	Button,
+    	Background, 
+    	Button, 
     	Cancel, 
     	Confirm,
-    	Facebook,
-    	Instructions,
-    	Twitter,
-    	Logo,
-    	Splash,
+    	Facebook, 
+    	Instructions, 
+    	Twitter, 
+    	GameOver,
+    	Logo, 
+    	NewRecord, 
+    	Splash, 
+    	Winner
     }
     
     /**
@@ -88,7 +92,7 @@ public class Assets
      */
     public enum ImageGameKey
     {
-    	Balls, Hint1, Hint2
+    	Balls, Explosion, Hint1, Hint2
     }
     
     /**
@@ -106,7 +110,7 @@ public class Assets
      */
     public enum AudioMenuKey
     {
-        //Selection
+    	Selection, Theme 
     }
     
     /**
@@ -115,13 +119,7 @@ public class Assets
      */
     public enum AudioGameKey
     {
-    	/*
-    	Explosion1, Explosion2, Explosion3, 
-    	Gameover,
-    	Laser1, Laser2, Laser3, 
-    	Music1, Music2, Music3,
-    	Thrust
-    	*/
+    	Explosion, Lose, Music, Tone1, Tone2, Tone3, Tone4, Tone5, Win
     }
     
     /**
@@ -152,6 +150,32 @@ public class Assets
         
         //load all text files
         Files.load(activity, TextKey.values(), DIRECTORY_TEXT, true);
+    }
+    
+    public static void playCollisionSound()
+    {
+    	switch (GamePanel.RANDOM.nextInt(5))
+    	{
+	    	case 0:
+	    		Audio.play(Assets.AudioGameKey.Tone1);
+	    		break;
+	    		
+	    	case 1:
+	    		Audio.play(Assets.AudioGameKey.Tone2);
+	    		break;
+	    		
+	    	case 2:
+	    		Audio.play(Assets.AudioGameKey.Tone3);
+	    		break;
+	    		
+	    	case 3:
+	    		Audio.play(Assets.AudioGameKey.Tone4);
+	    		break;
+	    		
+	    	case 4:
+	    		Audio.play(Assets.AudioGameKey.Tone5);
+	    		break;
+    	}
     }
     
     /**

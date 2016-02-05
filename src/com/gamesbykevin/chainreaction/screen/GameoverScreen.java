@@ -1,5 +1,6 @@
 package com.gamesbykevin.chainreaction.screen;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -33,8 +34,13 @@ public class GameoverScreen implements Screen, Disposable
     //the messages to display
     private String message = "", message2 = "";
     
-    //where we draw the image
+    //where we draw the images and text
+    private int imageX = 0, imageY = 0;
     private int messageX = 0, messageY = 0;
+    private int message2X = 0, message2Y = 0;
+    
+    //image to render
+    private Bitmap image;
     
     //time we have displayed text
     private long time;
@@ -42,7 +48,7 @@ public class GameoverScreen implements Screen, Disposable
     /**
      * The amount of time to wait until we render the game over menu
      */
-    private static final long DELAY_MENU_DISPLAY = 1000L;
+    private static final long DELAY_MENU_DISPLAY = 2750L;
     
     //do we display the menu
     private boolean display = false;
@@ -142,15 +148,20 @@ public class GameoverScreen implements Screen, Disposable
     
     /**
      * Assign the message(s)
+     * @param win Did we win the level etc...?
+     * @param record Is this a personal best record
      * @param message The message we want displayed
      * @param restartText The text to be displayed for the restart button
      */
-    public void setMessage(final String message, final String message2, final String restartText)
+    public void setMessage(
+    	final boolean win, 
+    	final boolean record, 
+    	final String message, 
+    	final String message2, 
+    	final String restartText)
     {
-        //assign the message
+        //assign the message(s)
         this.message = message;
-        
-        //assign the extra message
         this.message2 = message2;
         
         //update restart text
@@ -173,8 +184,25 @@ public class GameoverScreen implements Screen, Disposable
         this.paint.getTextBounds(message, 0, message.length(), tmp);
         
         //calculate the position of the message
-        messageX = (GamePanel.WIDTH / 2) - (tmp.width() / 2);
-        messageY = (int)(GamePanel.HEIGHT * .105);
+        this.messageX = (GamePanel.WIDTH / 2) - (tmp.width() / 2);
+        this.messageY = (int)buttons.get(Key.Rate).getY() + 175;
+        this.message2X = this.messageX;
+        this.message2Y = this.messageY + tmp.height() + (int)(tmp.height() * .5);
+        
+        if (!record)
+        {
+	        //determine which image we show
+	        this.image = (win) ? Images.getImage(Assets.ImageMenuKey.Winner) : Images.getImage(Assets.ImageMenuKey.GameOver);
+        }
+        else
+        {
+        	//assign the new record image
+        	this.image = Images.getImage(Assets.ImageMenuKey.NewRecord);
+        }
+        
+        //position image accordingly
+    	this.imageX = (GamePanel.WIDTH / 2) - (this.image.getWidth() / 2);
+        this.imageY = (int)(GamePanel.HEIGHT * .022);
     }
     
     /**
@@ -214,7 +242,7 @@ public class GameoverScreen implements Screen, Disposable
         			continue;
         		
                 //remove messages
-                setMessage("", "", "");
+                setMessage(false, false, "", "", "");
                 
         		//handle each button different
         		switch (key)
@@ -228,7 +256,7 @@ public class GameoverScreen implements Screen, Disposable
 	                    screen.setState(ScreenManager.State.Running);
 	                    
 	                    //play sound effect
-	                    //Audio.play(Assets.AudioMenuKey.Selection);
+	                    Audio.play(Assets.AudioMenuKey.Selection);
 	                    
 	                    //we don't request additional motion events
 	                    return false;
@@ -239,7 +267,7 @@ public class GameoverScreen implements Screen, Disposable
 	                    screen.setState(ScreenManager.State.Ready);
 	                    
 	                    //play sound effect
-	                    //Audio.play(Assets.AudioMenuKey.Selection);
+	                    Audio.play(Assets.AudioMenuKey.Selection);
 	                    
 	                    //we don't request additional motion events
 	                    return false;
@@ -247,7 +275,7 @@ public class GameoverScreen implements Screen, Disposable
 	        		case Rate:
 	                    
 	                    //play sound effect
-	                    //Audio.play(Assets.AudioMenuKey.Selection);
+	                    Audio.play(Assets.AudioMenuKey.Selection);
 	                    
 	                    //go to rate game page
 	                    screen.getPanel().getActivity().openWebpage(MainActivity.WEBPAGE_RATE_URL);
@@ -293,9 +321,13 @@ public class GameoverScreen implements Screen, Disposable
             //only darken the background when the menu is displayed
             ScreenManager.darkenBackground(canvas);
             
+            //draw the image if it exists
+            if (this.image != null)
+            	canvas.drawBitmap(this.image, this.imageX, this.imageY, this.paint);
+            
             //render messages
             canvas.drawText(this.message, messageX, messageY, this.paint);
-            canvas.drawText(this.message2, messageX, messageY + 500, this.paint);
+            canvas.drawText(this.message2, message2X, message2Y, this.paint);
         
             //render the buttons
             for (Key key : Key.values())
