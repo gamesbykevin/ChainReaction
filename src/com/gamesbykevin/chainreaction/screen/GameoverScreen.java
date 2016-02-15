@@ -187,7 +187,7 @@ public class GameoverScreen implements Screen, Disposable
         this.messageX = (GamePanel.WIDTH / 2) - (tmp.width() / 2);
         this.messageY = (int)buttons.get(Key.Rate).getY() + 175;
         this.message2X = this.messageX;
-        this.message2Y = this.messageY + tmp.height() + (int)(tmp.height() * .5);
+        this.message2Y = this.messageY + tmp.height() + (int)(tmp.height() * 1.5);
         
         if (!record)
         {

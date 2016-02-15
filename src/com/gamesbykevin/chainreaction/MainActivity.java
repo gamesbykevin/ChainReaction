@@ -27,17 +27,17 @@ public class MainActivity extends Activity
     /**
      * The url that contains the instructions for the game
      */
-    public static final String WEBPAGE_GAME_INSTRUCTIONS_URL = "http://gamesbykevin.com/";
+    public static final String WEBPAGE_GAME_INSTRUCTIONS_URL = "http://gamesbykevin.com/2016/02/06/chain-reaction";
     
     /**
      * The face book url
      */
-    public static final String WEBPAGE_FACEBOOK_URL = "http://facebook.com/gamesbykevin";
+    public static final String WEBPAGE_FACEBOOK_URL = "https://facebook.com/gamesbykevin";
     
     /**
      * The twitter url
      */
-    public static final String WEBPAGE_TWITTER_URL = "http://twitter.com/gamesbykevin";
+    public static final String WEBPAGE_TWITTER_URL = "https://twitter.com/gamesbykevin";
     
     /**
      * Called when the activity is first created
